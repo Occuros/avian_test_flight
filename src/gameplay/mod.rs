@@ -48,7 +48,7 @@ pub fn spawn_cubes_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mouse_button: Res<ButtonInput<MouseButton>>,
-    mut player_camera_query: Query<&mut Transform, With<PlayerCamera>>,
+    player_camera_query: Query<&mut Transform, With<PlayerCamera>>,
 ) {
     if !mouse_button.just_pressed(MouseButton::Left) { return; }
 
