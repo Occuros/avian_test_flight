@@ -1,0 +1,16 @@
+[package]
+name = "avian_test_flight"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.14.0-rc.3" }
+avian3d = { git = "https://github.com/Jondolf/bevy_xpbd.git", branch = "solver-rework" }
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
