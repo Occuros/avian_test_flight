@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.14.0-rc.3" }
 avian3d = { git = "https://github.com/Jondolf/bevy_xpbd.git", branch = "solver-rework" }
+bevy_editor_pls = "0.8.1"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

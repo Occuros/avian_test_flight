@@ -1,6 +1,7 @@
 use std::ops::Add;
 use std::time::Duration;
 use avian3d::collision::Collider;
+use avian3d::parry::shape::TypedShape;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -14,6 +15,7 @@ impl Plugin for GamePlayPlugin {
             .register_type::<TweenSize>()
             .add_systems(Update, (
                 tween_size_system,
+                tween_collider_size_system,
                 spawn_cubes_system,
                 shoot_bullet_system,
             ))
@@ -29,6 +31,13 @@ pub struct TweenSize {
     elapsed: Duration,
 }
 
+#[derive(Component, Default, Reflect)]
+pub struct TweenColliderSize {
+    pub start_size: Vec3,
+    pub end_size: Vec3,
+    pub duration: Duration,
+    elapsed: Duration,
+}
 
 pub fn tween_size_system(
     time: Res<Time>,
@@ -39,6 +48,28 @@ pub fn tween_size_system(
 
         transform.scale = tween_size.start_size.lerp(tween_size.end_size, progress);
         tween_size.elapsed = tween_size.elapsed.add(time.delta());
+    }
+}
+
+pub fn tween_collider_size_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut tween_query: Query<(Entity, &mut Collider, &mut TweenColliderSize)>,
+) {
+    for (entity, mut collision, mut tween_size) in tween_query.iter_mut() {
+        if tween_size.elapsed > tween_size.duration {continue}
+        let progress = (tween_size.elapsed.as_secs_f32() / tween_size.duration.as_secs_f32()).clamp(0.0, 1.0);
+        let updated_scale =tween_size.start_size.lerp(tween_size.end_size, progress);
+        commands.entity(entity).insert(Collider::cuboid(updated_scale.x, updated_scale.y, updated_scale.z));
+        collision.set_scale(updated_scale, 1);
+
+        tween_size.elapsed = tween_size.elapsed.add(time.delta());
+
+        if tween_size.elapsed >= tween_size.duration {
+            commands.entity(entity).insert(Collider::cuboid(tween_size.end_size.x, tween_size.end_size.y, tween_size.end_size.z));
+
+        }
+
     }
 }
 
@@ -54,24 +85,43 @@ pub fn spawn_cubes_system(
 
     let player_transform = player_camera_query.single();
     let position = player_transform.translation + player_transform.forward().as_vec3() * 2.0;
-    let start_size = Vec3::splat(0.01);
+    let start_size_value = 0.1;
+    let start_size = Vec3::splat(start_size_value);
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
-            material: materials.add(Color::srgb_u8(124, 144, 255)),
-            transform: Transform::from_translation(position).with_scale(start_size),
+            transform: Transform::from_translation(position),
             ..default()
         },
-        Collider::cuboid(1.0, 1.0, 1.0),
         RigidBody::Dynamic,
-        TweenSize {
-            start_size,
-            end_size: Vec3::splat(1.0),
-            duration: Duration::from_secs_f32(0.50),
-            ..default()
-        },
-        LinearVelocity(Vec3::Y)
-    ));
+        MassPropertiesBundle::default(),
+        LinearVelocity(Vec3::Y),
+    )).with_children(|parent| {
+        parent.spawn((
+            PbrBundle {
+                mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
+                material: materials.add(Color::srgb_u8(124, 144, 255)),
+                transform: Transform::default().with_scale(start_size),
+                ..default()
+            },
+            TweenSize {
+                start_size,
+                end_size: Vec3::splat(1.0),
+                duration: Duration::from_secs_f32(0.50),
+                ..default()
+            },
+        ));
+        parent.spawn((
+            TransformBundle::default(),
+            // Collider::cuboid(start_size_value, start_size_value, start_size_value),
+            Collider::cuboid(start_size_value, start_size_value, start_size_value),
+            TweenColliderSize {
+                start_size: start_size,
+                end_size: Vec3::ONE,
+                duration: Duration::from_secs_f32(0.50),
+                ..default()
+            }
+        ));
+    });
 }
 
 pub fn shoot_bullet_system(

@@ -12,6 +12,7 @@ use bevy::prelude::*;
 use bevy::prelude::KeyCode::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 use crate::gameplay::GamePlayPlugin;
+use bevy_editor_pls::prelude::*;
 
 fn main() {
     App::new()
@@ -21,6 +22,7 @@ fn main() {
             PhysicsDebugPlugin::default(),
             GamePlayPlugin,
         ))
+        // .add_plugins(EditorPlugin::default())
         .add_systems(Startup, setup)
         .add_systems(
             PreUpdate,
